@@ -81,8 +81,31 @@ async function run(){
         const order = req.body;
         const result = await orderCollection.insertOne(order);
         res.send(result);
-       
-       })
+        })
+
+        app.get('/orders/:id',async(req,res)=>{
+            const id=req.params.id;
+            const  query= {_id: ObjectId(id)}
+            const result=await orderCollection.findOne(query);
+            res.send(result)
+        })
+        app.put('/orders/:id',async(req,res)=>{
+            const id = req.params.id;
+            const query= {_id: ObjectId(id)};
+            //const result=async userCollection.
+            const user=req.body;
+            const option= {upsert: true}
+            const updatedUser={
+                $set: {
+                    
+                    message:user.name,
+                    phone:user.address,
+                    email: user.email
+                }
+            }
+            const result= await orderCollection.updateOne(query,updatedUser,option);
+            res.send(result)
+        })
 
    
   
