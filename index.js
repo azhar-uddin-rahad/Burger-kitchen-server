@@ -48,6 +48,12 @@ async function run(){
        const services= await cursor.toArray();
         res.send(services);
        })
+       app.post('/services',async(req,res)=>{
+        const order = req.body;
+        const result = await serviceCollection.insertOne(order);
+        res.send(result);
+        })
+
        app.post('/jwt',async(req,res)=>{
         const user = req.body;
         const token =jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn: '1h'});
