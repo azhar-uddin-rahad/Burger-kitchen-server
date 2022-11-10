@@ -16,6 +16,21 @@ app.get('/',(req,res)=>{
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.jmnkad8.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+function verifyJwt(req,res,next){
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+      return  res.status(401).send({message: 'unauthorized access'})
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,function(err,decoded){
+        if(err){
+         return   res.status(401).send({message: 'unauthorized access'})
+        }
+        req.decoded =decoded;
+        next()
+    })
+
+}
 async function run(){
  try{
     const serviceCollection=client.db('products').collection('services');
@@ -33,14 +48,18 @@ async function run(){
        const services= await cursor.toArray();
         res.send(services);
        })
-
+       app.post('/jwt',async(req,res)=>{
+        const user = req.body;
+        const token =jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn: '1h'});
+        res.send({token})
+       })
        app.get('/services/:id',async(req,res)=> {
         const id=req.params.id;
         const query={_id: ObjectId(id)};
         const service=await serviceCollection.findOne(query);
         res.send(service);
        })
-       app.delete('/orders/:id',async(req,res)=>{
+       app.delete('/orders/:id',verifyJwt,async(req,res)=>{
         
         const id = req.params.id;
         const query ={_id: ObjectId(id)};
@@ -63,7 +82,7 @@ async function run(){
         res.send(result);
 
        })
-      app.get('/orders', async(req,res)=>{
+      app.get('/orders',verifyJwt, async(req,res)=>{
         const decoded =req.decoded;
         console.log('inside orders api',decoded)
         let query={};
